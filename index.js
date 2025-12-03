@@ -27,7 +27,7 @@ async function run() {
         await client.connect();
 
         // create database
-        // const db = db.createDB()
+        const db = client.db('zap-shift-db');
 
         // create collections
 
