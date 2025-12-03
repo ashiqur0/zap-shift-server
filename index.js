@@ -32,6 +32,14 @@ async function run() {
         // create collections
         const parcelCollection = db.collection('parcel');
 
+        // parcel api
+
+        app.post('/parcels', async(req, res) => {
+            const parcel = req.body;
+            const result = await parcelCollection.insertOne(parcel);
+            res.send(result);
+        });
+
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
