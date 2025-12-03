@@ -30,6 +30,7 @@ async function run() {
         const db = client.db('zap-shift-db');
 
         // create collections
+        const parcelCollection = db.collection('parcel');
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
