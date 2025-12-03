@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const stripe = require('stripe')(process.env.STRIPE_SECRET);
+
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -33,29 +35,29 @@ async function run() {
         const parcelCollection = db.collection('parcels');
 
         // parcel api
-        app.get('/parcels', async(req, res) => {
+        app.get('/parcels', async (req, res) => {
             const query = {};
-            const {email} = req.query;
+            const { email } = req.query;
 
             if (email) {
                 query.senderEmail = email;
             }
 
-            const options = {sort: {createdAt: -1}};
+            const options = { sort: { createdAt: -1 } };
 
             const cursor = parcelCollection.find(query, options);
             const result = await cursor.toArray();
             res.send(result);
         });
 
-        app.get('/parcels/:id', async(req, res) => {
+        app.get('/parcels/:id', async (req, res) => {
             const id = req.params.id;
-            const query = {_id: new ObjectId(id)};
+            const query = { _id: new ObjectId(id) };
             const result = await parcelCollection.findOne(query);
             res.send(result);
         });
 
-        app.post('/parcels', async(req, res) => {
+        app.post('/parcels', async (req, res) => {
             const parcel = req.body;
             parcel.createdAt = new Date();
 
@@ -63,13 +65,44 @@ async function run() {
             res.send(result);
         });
 
-        app.delete('/parcels/:id', async(req, res) => {
+        app.delete('/parcels/:id', async (req, res) => {
             const id = req.params.id;
-            const query = {_id: new ObjectId(id)};
+            const query = { _id: new ObjectId(id) };
 
             const result = await parcelCollection.deleteOne(query);
             res.send(result);
         })
+
+        // payment related api
+        app.post('/create-checkout-session', async (req, res) => {
+            const paymentInfo = req.body;
+            const amount = parseInt(paymentInfo.cost) * 100;
+
+            const session = await stripe.checkout.sessions.create({
+                line_items: [
+                    {
+                        price_data: {
+                            currency: 'USD',
+                            unit_amount: amount,
+                            product_data: {
+                                name: paymentInfo.parcelName,
+                            }
+                        },
+                        quantity: 1,
+                    },
+                ],
+                customer_email: paymentInfo.senderEmail,
+                mode: 'payment',
+                metadata: {
+                    parcelId: paymentInfo.parcelId,
+                },
+                success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success`,
+                cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancelled`,
+            })
+
+            console.log(session);
+            res.send({url: session.url});
+        });
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
