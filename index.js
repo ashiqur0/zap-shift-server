@@ -30,9 +30,14 @@ async function run() {
         const db = client.db('zap-shift-db');
 
         // create collections
-        const parcelCollection = db.collection('parcel');
+        const parcelCollection = db.collection('parcels');
 
         // parcel api
+        app.get('/parcels', async(req, res) => {
+            const cursor = parcelCollection.find();
+            const result = await cursor.toArray();
+            res.send(result);
+        });
 
         app.post('/parcels', async(req, res) => {
             const parcel = req.body;
@@ -45,7 +50,7 @@ async function run() {
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
-        await client.close();
+        // await client.close();
     }
 }
 run().catch(console.dir);
