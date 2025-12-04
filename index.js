@@ -81,6 +81,12 @@ async function run() {
            res.send(result);
         });
 
+        app.get('/users', async(req, res) => {
+            const cursor = usersCollection.find();
+            const result = await cursor.toArray();
+            res.send(result);
+        });
+
         // parcel api
         app.get('/parcels', async (req, res) => {
             const query = {};
