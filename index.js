@@ -12,6 +12,32 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 app.use(cors());
 
+const admin = require("firebase-admin");
+const serviceAccount = require("./zap-shift-firebase-adminsdk.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+const verifyFirebaseToken = async (req, res, next) => {
+    const authorized = req.headers?.authorization;
+
+    if (!authorized) {
+        return res.status(401).send({ message: 'unauthorized access1' });
+    }
+
+    
+    try {
+        const token = authorized.split(' ')[1];
+        const decoded = await admin.auth().verifyIdToken(token);
+        req.decoded_email = decoded.email;
+
+        next();
+    } catch (error) {
+        return res.status(401).send({ message: 'unauthorized access2' });
+    }
+}
+
 function generateTrackingId() {
     const prefix = "PRCL";  // your brand prefix
     const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");    //YYMMDD
@@ -175,11 +201,16 @@ async function run() {
             res.send({ success: false });
         })
 
-        app.get('/payments', async (req, res) => {
+        app.get('/payments', verifyFirebaseToken, async (req, res) => {
             const email = req.query.email;
             const query = {}
             if (email) {
                 query.customerEmail = email;
+
+                // check email address
+                if (email !== req.decoded_email) {
+                    return res.status(403).send({ message: 'forbidden access' });
+                }
             }
 
             const cursor = paymentCollection.find(query);
