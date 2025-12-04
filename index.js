@@ -60,6 +60,7 @@ async function run() {
         app.post('/parcels', async (req, res) => {
             const parcel = req.body;
             parcel.createdAt = new Date();
+            parcel.paymentStatus = 'unpaid';
 
             const result = await parcelCollection.insertOne(parcel);
             res.send(result);
@@ -82,10 +83,10 @@ async function run() {
                 line_items: [
                     {
                         price_data: {
-                            currency: 'USD',
+                            currency: 'usd',
                             unit_amount: amount,
                             product_data: {
-                                name: paymentInfo.parcelName,
+                                name: `Please pay for ${paymentInfo.parcelName}`,
                             }
                         },
                         quantity: 1,
@@ -96,13 +97,33 @@ async function run() {
                 metadata: {
                     parcelId: paymentInfo.parcelId,
                 },
-                success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success`,
+                success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success?session_id={CHECKOUT_SESSION_ID}`,
                 cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancelled`,
             })
-
-            console.log(session);
+            
             res.send({url: session.url});
         });
+
+        app.patch('/payment-success', async(req, res) => {
+            const sessionId = req.query.session_id;
+            
+            const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+            if (session.payment_status === 'paid') {
+                const id = session.metadata.parcelId;
+                const query = {_id: new ObjectId(id)};
+                const update = {
+                    $set: {
+                        paymentStatus: 'paid',
+                    }
+                }
+                const options = {};
+                const result = await parcelCollection.updateOne(query, update, options);
+                res.send(result);
+            }
+
+            res.send({success: false});
+        })
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
