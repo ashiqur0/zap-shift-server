@@ -67,8 +67,19 @@ async function run() {
         const db = client.db('zap-shift-db');
 
         // create collections
+        const usersCollection = db.collection('users');
         const parcelCollection = db.collection('parcels');
         const paymentCollection = db.collection('payments');
+
+        // users related api
+        app.post('/users', async(req, res) => {
+           const user = req.body;
+           user.role = 'user';
+           user.createdAt = new Date();
+           
+           const result = usersCollection.insertOne(user);
+           res.send(result);
+        });
 
         // parcel api
         app.get('/parcels', async (req, res) => {
@@ -213,7 +224,7 @@ async function run() {
                 }
             }
 
-            const cursor = paymentCollection.find(query);
+            const cursor = paymentCollection.find(query).sort({paidAt: -1});
             const result = await cursor.toArray();
             res.send(result);
         });
