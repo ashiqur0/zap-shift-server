@@ -16,7 +16,7 @@ const admin = require("firebase-admin");
 const serviceAccount = require("./zap-shift-firebase-adminsdk.json");
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+    credential: admin.credential.cert(serviceAccount)
 });
 
 const verifyFirebaseToken = async (req, res, next) => {
@@ -26,7 +26,7 @@ const verifyFirebaseToken = async (req, res, next) => {
         return res.status(401).send({ message: 'unauthorized access1' });
     }
 
-    
+
     try {
         const token = authorized.split(' ')[1];
         const decoded = await admin.auth().verifyIdToken(token);
@@ -72,16 +72,22 @@ async function run() {
         const paymentCollection = db.collection('payments');
 
         // users related api
-        app.post('/users', async(req, res) => {
-           const user = req.body;
-           user.role = 'user';
-           user.createdAt = new Date();
-           
-           const result = usersCollection.insertOne(user);
-           res.send(result);
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            user.role = 'user';
+            user.createdAt = new Date();
+            const email = user.email;
+
+            const userExists = await usersCollection.findOne({ email });
+            if (userExists) {
+                return res.send({message: 'User Exist'});
+            }
+
+            const result = usersCollection.insertOne(user);
+            res.send(result);
         });
 
-        app.get('/users', async(req, res) => {
+        app.get('/users', async (req, res) => {
             const cursor = usersCollection.find();
             const result = await cursor.toArray();
             res.send(result);
@@ -230,7 +236,7 @@ async function run() {
                 }
             }
 
-            const cursor = paymentCollection.find(query).sort({paidAt: -1});
+            const cursor = paymentCollection.find(query).sort({ paidAt: -1 });
             const result = await cursor.toArray();
             res.send(result);
         });
