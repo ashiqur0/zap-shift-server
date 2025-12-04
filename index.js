@@ -123,7 +123,7 @@ async function run() {
             const transactionId = session.payment_intent;
             const query = { transactionId: transactionId };
             const paymentExist = await paymentCollection.findOne(query);
-            
+
             if (paymentExist) {
                 return res.send({
                     message: 'already exist',
@@ -174,6 +174,18 @@ async function run() {
 
             res.send({ success: false });
         })
+
+        app.get('/payments', async (req, res) => {
+            const email = req.query.email;
+            const query = {}
+            if (email) {
+                query.customerEmail = email;
+            }
+
+            const cursor = paymentCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        });
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
