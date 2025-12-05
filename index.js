@@ -261,7 +261,21 @@ async function run() {
             const cursor = ridersCollection.find(query).sort({createdAt: -1});
             const result = await cursor.toArray();
             res.send(result);
-        })
+        });
+
+        app.patch('/riders', verifyFirebaseToken, async (req, res) => {
+            const status = req.body.status;
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    status: status
+                }
+            }
+
+            const result = ridersCollection.updateOne(query, updatedDoc);
+            res.send(result);
+        });
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
