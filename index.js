@@ -75,11 +75,11 @@ async function run() {
         // must be used after firebaseToken verification middleware
         const verifyAdmin = async (req, res, next) => {
             const email = req.decoded_email;
-            const query = {email};
+            const query = { email };
             const user = await usersCollection.findOne(query);
 
             if (!user || user.role !== 'admin') {
-                return res.status(403).send({message: 'forbidden access'});
+                return res.status(403).send({ message: 'forbidden access' });
             }
 
             next();
@@ -94,7 +94,7 @@ async function run() {
 
             const userExists = await usersCollection.findOne({ email });
             if (userExists) {
-                return res.send({message: 'User Exist'});
+                return res.send({ message: 'User Exist' });
             }
 
             const result = usersCollection.insertOne(user);
@@ -116,7 +116,17 @@ async function run() {
         })
 
         app.get('/users', verifyFirebaseToken, async (req, res) => {
-            const cursor = usersCollection.find();
+            const searchText = req.query.searchText;
+            const query = {};
+
+            if (searchText) {
+                query.$or = [
+                    { displayName: { $regex: searchText, $options: 'i' } },
+                    { email: { $regex: searchText, $options: 'i' } }
+                ]
+            }
+
+            const cursor = usersCollection.find(query).sort({ createdAt: -1 }).limit(5);
             const result = await cursor.toArray();
             res.send(result);
         });
@@ -127,9 +137,9 @@ async function run() {
 
         app.get('/users/:email/role', async (req, res) => {
             const email = req.params.email;
-            const query = {email};
+            const query = { email };
             const user = await usersCollection.findOne(query);
-            res.send({role: user?.role || 'user'});
+            res.send({ role: user?.role || 'user' });
         })
 
         // parcel api
@@ -295,8 +305,8 @@ async function run() {
             if (req.query.status) {
                 query.status = req.query.status;
             }
-            
-            const cursor = ridersCollection.find(query).sort({createdAt: -1});
+
+            const cursor = ridersCollection.find(query).sort({ createdAt: -1 });
             const result = await cursor.toArray();
             res.send(result);
         });
@@ -315,13 +325,13 @@ async function run() {
 
             if (status === 'approved') {
                 const email = req.body.email;
-                const userQuery = {email};
+                const userQuery = { email };
                 const updateUser = {
                     $set: {
                         role: 'rider'
                     }
                 }
-                const userResult = await usersCollection.updateOne(userQuery, updateUser);            
+                const userResult = await usersCollection.updateOne(userQuery, updateUser);
             }
 
             res.send(result);
