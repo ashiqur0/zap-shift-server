@@ -145,10 +145,14 @@ async function run() {
         // parcel api
         app.get('/parcels', async (req, res) => {
             const query = {};
-            const { email } = req.query;
+            const { email, deliveryStatus } = req.query;
 
             if (email) {
                 query.senderEmail = email;
+            }
+
+            if (deliveryStatus) {
+                query.deliveryStatus = deliveryStatus;
             }
 
             const options = { sort: { createdAt: -1 } };
@@ -238,6 +242,7 @@ async function run() {
                 const update = {
                     $set: {
                         paymentStatus: 'paid',
+                        deliveryStatus: 'pending-pickup',
                         trackingId: trackingId
                     }
                 }
