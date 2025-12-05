@@ -87,7 +87,21 @@ async function run() {
             res.send(result);
         });
 
-        app.get('/users', async (req, res) => {
+        app.patch('/users/:id', verifyFirebaseToken, async (req, res) => {
+            const id = req.params.id;
+            const roleInfo = req.body;
+            const query = { _id: new ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    role: roleInfo.role
+                }
+            }
+
+            const result = await usersCollection.updateOne(query, updatedDoc);
+            res.send(result);
+        })
+
+        app.get('/users', verifyFirebaseToken, async (req, res) => {
             const cursor = usersCollection.find();
             const result = await cursor.toArray();
             res.send(result);
