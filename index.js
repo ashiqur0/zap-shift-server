@@ -253,7 +253,12 @@ async function run() {
         });
 
         app.get('/riders', async (req, res) => {
-            const cursor = ridersCollection.find().sort({createdAt: -1});
+            const query = {};
+            if (req.query.status) {
+                query.status = req.query.status;
+            }
+            
+            const cursor = ridersCollection.find(query).sort({createdAt: -1});
             const result = await cursor.toArray();
             res.send(result);
         })
