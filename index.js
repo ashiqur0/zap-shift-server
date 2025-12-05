@@ -26,7 +26,6 @@ const verifyFirebaseToken = async (req, res, next) => {
         return res.status(401).send({ message: 'unauthorized access1' });
     }
 
-
     try {
         const token = authorized.split(' ')[1];
         const decoded = await admin.auth().verifyIdToken(token);
@@ -263,7 +262,7 @@ async function run() {
             res.send(result);
         });
 
-        app.patch('/riders', verifyFirebaseToken, async (req, res) => {
+        app.patch('/riders/:id', verifyFirebaseToken, async (req, res) => {
             const status = req.body.status;
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
@@ -273,7 +272,19 @@ async function run() {
                 }
             }
 
-            const result = ridersCollection.updateOne(query, updatedDoc);
+            const result = await ridersCollection.updateOne(query, updatedDoc);
+
+            if (status === 'approved') {
+                const email = req.body.email;
+                const userQuery = {email};
+                const updateUser = {
+                    $set: {
+                        role: 'rider'
+                    }
+                }
+                const userResult = await usersCollection.updateOne(userQuery, updateUser);            
+            }
+
             res.send(result);
         });
 
