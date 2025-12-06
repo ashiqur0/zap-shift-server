@@ -223,12 +223,23 @@ async function run() {
 
         // handle delivery status when rider will accept the delivery
         app.patch('/parcels/:id/status', async (req, res) => {
-            const { deliveryStatus } = req.body;
+            const { deliveryStatus, riderId } = req.body;
             const query = { _id: new ObjectId(req.params.id) };
             const updatedDoc = {
                 $set: {
                     deliveryStatus: deliveryStatus
                 }
+            }
+
+            // rider status update
+            if (deliveryStatus === 'parcel_delivered') {
+                const riderQuery = { _id: new ObjectId(riderId) };
+                const riderUpdatedDoc = {
+                    $set: {
+                        workStatus: 'available'
+                    }
+                }
+                const riderResult = await ridersCollection.updateOne(riderQuery, riderUpdatedDoc);
             }
 
             const result = await parcelsCollection.updateOne(query, updatedDoc);
@@ -402,21 +413,6 @@ async function run() {
 
             res.send(result);
         });
-
-        // rider status update to available after successful deliver: from Assigned Deliveries page
-        app.patch('/rider/:id/status', async (req, res) => {
-            const status = req.body.status;
-            const id = req.params.id;
-            const query = { _id: new ObjectId(id) };
-            const updatedDoc = {
-                $set: {
-                    workStatus: 'available'
-                }
-            }
-
-            const result = await ridersCollection.updateOne(query, updatedDoc);
-            res.send(result);
-        })
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
