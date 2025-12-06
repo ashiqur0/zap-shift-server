@@ -166,10 +166,13 @@ async function run() {
             const { riderEmail, deliveryStatus } = req.query;
             const query = {};
             if (riderEmail) query.riderEmail = riderEmail;
-            if (deliveryStatus) {
+
+            if (deliveryStatus !== 'parcel_delivered') {
                 // query.deliveryStatus = { $in: ['rider_arriving', 'rider_arriving'] };
                 // query.deliveryStatus = deliveryStatus;
                 query.deliveryStatus = { $nin: ['parcel_delivered'] };
+            } else {
+                query.deliveryStatus = deliveryStatus;
             }
 
             const cursor = parcelsCollection.find(query);
