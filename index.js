@@ -162,6 +162,17 @@ async function run() {
             res.send(result);
         });
 
+        app.get('/parcels/rider', async (req, res) => {
+            const { riderEmail, deliveryStatus } = req.query;
+            const query = {};
+            if (riderEmail) query.riderEmail = riderEmail;
+            if (deliveryStatus) query.deliveryStatus = deliveryStatus;
+
+            const cursor = parcelsCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        });
+
         app.get('/parcels/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
@@ -181,20 +192,20 @@ async function run() {
         app.patch('/parcels/:id', async (req, res) => {
             const { riderId, riderName, riderEmail, parcelId } = req.body;
             const id = req.params.id;
-            const query = {_id: new ObjectId(id)};
+            const query = { _id: new ObjectId(id) };
             const updatedDoc = {
                 $set: {
                     deliveryStatus: 'driver_assigned',
                     riderId: riderId,
                     riderName: riderName,
-                    riderEmail: riderEmail,                    
+                    riderEmail: riderEmail,
                 }
             }
 
             const result = await parcelsCollection.updateOne(query, updatedDoc);
 
             // update rider information
-            const riderQuery = {_id: new ObjectId(riderId)};
+            const riderQuery = { _id: new ObjectId(riderId) };
             const riderUpdatedDoc = {
                 $set: {
                     workStatus: 'in delivery'
