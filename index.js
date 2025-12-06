@@ -189,6 +189,7 @@ async function run() {
             res.send(result);
         });
 
+        // TODO: rename this to be specific like, parcel/:id/assign
         app.patch('/parcels/:id', async (req, res) => {
             const { riderId, riderName, riderEmail, parcelId } = req.body;
             const id = req.params.id;
@@ -213,6 +214,20 @@ async function run() {
             }
 
             const riderResult = await ridersCollection.updateOne(riderQuery, riderUpdatedDoc);
+            res.send(result);
+        });
+
+        // handle delivery status when rider will accept the delivery
+        app.patch('/parcels/:id/status', async (req, res) => {
+            const { deliveryStatus } = req.body;
+            const query = { _id: new ObjectId(req.params.id) };
+            const updatedDoc = {
+                $set: {
+                    deliveryStatus: deliveryStatus
+                }
+            }
+
+            const result = await parcelsCollection.updateOne(query, updatedDoc);
             res.send(result);
         });
 
