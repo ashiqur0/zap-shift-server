@@ -67,7 +67,7 @@ async function run() {
 
         // create collections
         const usersCollection = db.collection('users');
-        const parcelCollection = db.collection('parcels');
+        const parcelsCollection = db.collection('parcels');
         const paymentCollection = db.collection('payments');
         const ridersCollection = db.collection('riders');
 
@@ -157,7 +157,7 @@ async function run() {
 
             const options = { sort: { createdAt: -1 } };
 
-            const cursor = parcelCollection.find(query, options);
+            const cursor = parcelsCollection.find(query, options);
             const result = await cursor.toArray();
             res.send(result);
         });
@@ -165,7 +165,7 @@ async function run() {
         app.get('/parcels/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
-            const result = await parcelCollection.findOne(query);
+            const result = await parcelsCollection.findOne(query);
             res.send(result);
         });
 
@@ -174,7 +174,34 @@ async function run() {
             parcel.createdAt = new Date();
             parcel.paymentStatus = 'unpaid';
 
-            const result = await parcelCollection.insertOne(parcel);
+            const result = await parcelsCollection.insertOne(parcel);
+            res.send(result);
+        });
+
+        app.patch('/parcels/:id', async (req, res) => {
+            const { riderId, riderName, riderEmail, parcelId } = req.body;
+            const id = req.params.id;
+            const query = {_id: new ObjectId(id)};
+            const updatedDoc = {
+                $set: {
+                    deliveryStatus: 'driver_assigned',
+                    riderId: riderId,
+                    riderName: riderName,
+                    riderEmail: riderEmail,                    
+                }
+            }
+
+            const result = await parcelsCollection.updateOne(query, updatedDoc);
+
+            // update rider information
+            const riderQuery = {_id: new ObjectId(riderId)};
+            const riderUpdatedDoc = {
+                $set: {
+                    workStatus: 'in delivery'
+                }
+            }
+
+            const riderResult = await ridersCollection.updateOne(riderQuery, riderUpdatedDoc);
             res.send(result);
         });
 
@@ -182,7 +209,7 @@ async function run() {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
 
-            const result = await parcelCollection.deleteOne(query);
+            const result = await parcelsCollection.deleteOne(query);
             res.send(result);
         })
 
@@ -247,7 +274,7 @@ async function run() {
                     }
                 }
                 const options = {};
-                const result = await parcelCollection.updateOne(query, update, options);
+                const result = await parcelsCollection.updateOne(query, update, options);
 
                 const payment = {
                     amount: session.amount_total / 100,
