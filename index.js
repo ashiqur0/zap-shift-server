@@ -166,7 +166,11 @@ async function run() {
             const { riderEmail, deliveryStatus } = req.query;
             const query = {};
             if (riderEmail) query.riderEmail = riderEmail;
-            if (deliveryStatus) query.deliveryStatus = deliveryStatus;
+            if (deliveryStatus) {
+                // query.deliveryStatus = { $in: ['rider_arriving', 'rider_arriving'] };
+                // query.deliveryStatus = deliveryStatus;
+                query.deliveryStatus = { $nin: ['parcel_delivered'] };
+            }
 
             const cursor = parcelsCollection.find(query);
             const result = await cursor.toArray();
@@ -371,6 +375,7 @@ async function run() {
             res.send(result);
         });
 
+        // rider approval and set user role by admin
         app.patch('/riders/:id', verifyFirebaseToken, verifyAdmin, async (req, res) => {
             const status = req.body.status;
             const id = req.params.id;
@@ -397,6 +402,21 @@ async function run() {
 
             res.send(result);
         });
+
+        // rider status update to available after successful deliver: from Assigned Deliveries page
+        app.patch('/rider/:id/status', async (req, res) => {
+            const status = req.body.status;
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    workStatus: 'available'
+                }
+            }
+
+            const result = await ridersCollection.updateOne(query, updatedDoc);
+            res.send(result);
+        })
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
