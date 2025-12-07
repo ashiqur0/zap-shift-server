@@ -203,9 +203,12 @@ async function run() {
         app.post('/parcels', async (req, res) => {
             const parcel = req.body;
             parcel.createdAt = new Date();
-            // parcel.trackingId = generateTrackingId();
+            parcel.paymentStatus = 'unpaid';
+            const trackingId = generateTrackingId();
+            parcel.trackingId = trackingId;
 
-            // logTracking(trackingId, 'parcel_created')
+
+            logTracking(trackingId, 'parcel_created');
 
             const result = await parcelsCollection.insertOne(parcel);
             res.send(result);
