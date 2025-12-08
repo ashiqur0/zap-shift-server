@@ -86,6 +86,18 @@ async function run() {
             next();
         }
 
+        const verifyRider = async (req, res, next) => {
+            const email = req.decoded_email;
+            const query = { email };
+            const user = await usersCollection.findOne(query);
+
+            if (!user || user.role !== 'rider') {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+
+            next();
+        }
+
         const logTracking = async (trackingId, status) => {
             const log = {
                 trackingId,
@@ -281,6 +293,21 @@ async function run() {
             res.send(result);
         })
 
+        // mongodb aggregate pipeline
+        app.get('/parcels/delivery-status/stats', async (req, res) => {
+            const pipeline = [
+                {
+                    $group: {
+                        _id: '$deliveryStatus',
+                        count: { $sum: 1 }
+                    }
+                }
+            ]
+
+            const result = await parcelsCollection.aggregate(pipeline).toArray();
+            res.send(result);
+        })
+
         // payment related api
         app.post('/payment-checkout-session', async (req, res) => {
             const paymentInfo = req.body;
@@ -448,8 +475,8 @@ async function run() {
         // tracking related api
         app.get('/trackings/:trackingId/logs', async (req, res) => {
             const trackingId = req.params.trackingId;
-            const query = {trackingId};
-            
+            const query = { trackingId };
+
             const result = await trackingsCollection.find(query).toArray();
             res.send(result);
         })
