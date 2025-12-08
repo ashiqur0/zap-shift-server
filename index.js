@@ -448,6 +448,41 @@ async function run() {
                         riderEmail: email,
                         deliveryStatus: 'parcel_delivered'
                     }
+                },
+                {
+                    $lookup: {
+                        from: 'trackings',
+                        localField: 'trackingId',
+                        foreignField: 'trackingId',
+                        as: 'parcel_trackings'
+                    }
+                },
+                {
+                    $unwind: '$parcel_trackings'
+                },
+                {
+                    $match: {
+                        'parcel_trackings.status': 'parcel_delivered'
+                    }
+                },
+                {
+                    $addFields: {
+                        deliveryDay: {
+                            $dateToString: {
+                                format: '%Y-%m-%d',
+                                date: '$parcel_trackings.createdAt'
+                            }
+                        }
+                    }
+                },
+                {
+                    $group: {
+                        _id: '$deliveryDay',
+                        deliveredCount: { $sum: 1 }
+                    }
+                },
+                {
+                    $sort: { _id: 1 }
                 }
             ]
 
