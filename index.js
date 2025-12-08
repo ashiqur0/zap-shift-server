@@ -438,6 +438,23 @@ async function run() {
             res.send(result);
         });
 
+        app.get('/riders/delivery-per-day', async (req, res) => {
+            const email = req.query.email;
+
+            // aggregate on parcel
+            const pipeline = [
+                {
+                    $match: {
+                        riderEmail: email,
+                        deliveryStatus: 'parcel_delivered'
+                    }
+                }
+            ]
+
+            const result = await parcelsCollection.aggregate(pipeline).toArray();
+            res.send(result);
+        })
+
         app.get('/riders', async (req, res) => {
             const { status, district, workStatus } = req.query;
 
