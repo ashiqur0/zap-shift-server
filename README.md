@@ -16,13 +16,6 @@ The server handles authentication, role-based authorization, parcel workflows, r
 
 ---
 
-## 🖼️ API Overview
-> Replace the image link below with API flow or architecture diagram later
-
-![Zap Shift Server Architecture](https://via.placeholder.com/1200x600?text=Zap+Shift+Server+Architecture)
-
----
-
 ## ✨ Core Responsibilities
 
 - 📦 Parcel lifecycle management
